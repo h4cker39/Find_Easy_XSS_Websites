@@ -15,3 +15,11 @@ httpx -l subfinder.txt -o httpx.txt
 echo $1 | gau --threads 5 >> Endpoints.txt
 
 cat httpx.txt | katana -jc >> Endpoints.txt
+
+cat Enpoints.txt | uro >> Endpoints_F.txt
+
+cat Endpoints_F.txt | gf xss >> XSS.txt
+
+cat XSS.txt | Gxss -p khXSS -o XSS_Ref.txt
+
+dalfox file XSS_Ref.txt -o Vulnerable_XSS.txt
