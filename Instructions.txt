@@ -1,0 +1,42 @@
+* Critical DOM XSS in Toyota::
+
+$Keys$: automation tools [gau+dalfox+etc..]
+
+Now, We have a Toyota domain and we need to gather subdomains for the domain. You can use tools like sublist3r — subfinder — asset finder — amass -.. then filter these subdomains using httpx that are used to get the live subdomains.
+
+httpx -l subdomains.txt -o httpx.txt
+
+Now Let’s Gather the endpoints from a Wayback Machine and Common Crawl
+
+echo "toyota.com" | gau --threads 5 >> Enpoints.txt
+
+cat httpx.txt | katana -jc >> Enpoints.txt
+
+Because most of them would be duplicated, we would get rid of them with
+
+cat Enpoints.txt | uro >> Endpoints_F.txt
+
+    gau: a tool that fetches known URLs from the Wayback Machine, for any domain.
+
+    katana: is a powerful tool that focuses on web crawling in depth.
+
+    uro: a good tool for filtering uninteresting/duplicate content from the endpoints gathered for example if we have multiple URLs like https://example.com?id=1 and https://example.com?id=2 will filter them to only one URL.
+
+Note: You can automate all of the previous things with an automation script with the tools you are using like most security researchers to make the processes easier and I will share My scripts in future writeups.
+
+Now, we have a lot of endpoints and we need to filter them for working. I’m using the awesome gf tool which filters the endpoints depending on the patterns provided for example there are patterns for XSS, SQLi, SSRF, etc… you can use any public patterns from GitHub like This and Add them in “~/.gf” directory.
+
+cat Endpoints_F.txt | gf xss >> XSS.txt
+# For getting the endpoints that have parameters which may be vulnerable to XSS
+
+Then we will use the Gxss tool for finding parameters whose values are reflected in the response.
+
+cat XSS.txt | Gxss -p khXSS -o XSS_Ref.txt
+
+In this process, you have two options the first is manually testing, or use an XSS automation tool and confirm the results manually. Our file is huge, so I would use the Dalfox automation XSS scanners.
+
+dalfox file XSS_Ref.txt -o Vulnerable_XSS.txt
+
+I found that there is a vulnerable subdomain let’s call it sub.toyota.com so let’s find out what is happening.
+
+When I navigate to the vulnerable URL [https://sub.toyota.com/direcrory/?dir=%3C%2Fscript%3E%3Cscript%3Econfirm%28document.domain%29%3C%2Fscript%3E] I got a popup message
